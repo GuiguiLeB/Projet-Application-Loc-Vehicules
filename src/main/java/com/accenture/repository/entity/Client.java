@@ -1,13 +1,15 @@
 package com.accenture.repository.entity;
 
+import com.accenture.model.Permis;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.List;
 
-
+@EqualsAndHashCode(callSuper = false)
 @Entity
 @Data
 @NoArgsConstructor
@@ -22,6 +24,8 @@ public class Client extends UtilisateurConnecte {
 
     private LocalDate dateNaissance;
     private LocalDate dateInscription;
-    private List<String> permis;
+
+    @ElementCollection
+    private List<Permis> permis;
     private Boolean desactive;
 }

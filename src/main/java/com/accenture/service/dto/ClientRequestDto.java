@@ -1,5 +1,6 @@
 package com.accenture.service.dto;
 
+import com.accenture.model.Permis;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
@@ -13,7 +14,7 @@ public record ClientRequestDto(
         @NotBlank
         String prenom,
 
-        @NotBlank
+        @NotNull
         AdresseDto adresse,
 
         @NotBlank
@@ -27,12 +28,7 @@ public record ClientRequestDto(
         @Past
         LocalDate dateNaissance,
 
-        @FutureOrPresent
-        LocalDate dateInscription,
+        List<Permis> permis
 
-        List<String>permis,
-
-        @NotNull
-        Boolean desactive
 ) {
 }

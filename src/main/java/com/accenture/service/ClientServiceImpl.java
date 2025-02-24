@@ -11,13 +11,18 @@ import com.accenture.service.mapper.ClientMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 
 @Service
 public class ClientServiceImpl implements ClientService {
 
+    private static final String REGEX_MAIL = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
+    private static final String REGEX_PW = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[&#@-_§])[A-Za-z\\d&%$_]{8,16}$";
     public static final String ID_NON_PRESENT = "id non présent";
     private final ClientDao clientDao;
     private final ClientMapper clientMapper;
@@ -29,8 +34,8 @@ public class ClientServiceImpl implements ClientService {
         this.adresseMapper = adresseMapper;
     }
 
-    public ClientResponseDto trouver(int id) throws ClientException {
-        Optional<Client> optClient = clientDao.findById(id);
+    public ClientResponseDto trouver(String email) throws ClientException {
+        Optional<Client> optClient = clientDao.findById(email);
         if (optClient.isEmpty())
             throw new EntityNotFoundException(ID_NON_PRESENT);
         Client client = optClient.get();
@@ -49,28 +54,68 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public ClientResponseDto ajouterClient(ClientRequestDto clientRequestDto) throws ClientException {
-//        validateClient(clientRequestDto);
+      verifierClient(clientRequestDto);
 
         Adresse adresse = adresseMapper.toAdresse(clientRequestDto.adresse());
 
         Client client = clientMapper.toClient(clientRequestDto);
         client.setAdresse(adresse);
-        Client backedClient = clientDao.save(client);
-        return clientMapper.toClientResponseDto(backedClient);    }
+        Client clientEnreg = clientDao.save(client);
+        return clientMapper.toClientResponseDto(clientEnreg);    }
 
+//    @Overridepublic ClientResponseDto toAdd(ClientRequestDto clientRequestDto) throws ClientException {
+//
+//        clientVerify(clientRequestDto);
+//        Client client = clientMapper.toClient(clientRequestDto);
+//        Client backedClient = clientDao.save(client);
+//        return clientMapper.toClientResponseDto(backedClient);}
 
-
-    public void supprimerClient(int id) throws EntityNotFoundException {
-        if (clientDao.existsById(id))
-            clientDao.deleteById(id);
-        else
+    @Override
+    public ClientResponseDto modifierClient(String email, ClientRequestDto clientRequestDto) throws ClientException, EntityNotFoundException {
+        if (!clientDao.existsById(email))
             throw new EntityNotFoundException(ID_NON_PRESENT);
+       verifierClient(clientRequestDto);
+        Client client = clientMapper.toClient(clientRequestDto);
+        client.setEmail(email);
+        Client registrdClient = clientDao.save(client);
+        return clientMapper.toClientResponseDto(registrdClient);}
+
+
+    public void supprimerClient(String email)
+            throws EntityNotFoundException {
+        if (clientDao.existsById(email))
+            clientDao.deleteById(email);
     }
 
-//    private static void clientVerify(ClientRequestDto clientRequestDto) throws ClientException {
-//        if (clientRequestDto == null)
-//            throw new ClientException("ClientRequestDto is null");
-//        if (clientRequestDto.name() == null || clientRequestDto.name().isBlank())        throw new ClientException("Client's name is absent");    if (clientRequestDto.firstName() == null)        throw new ClientException("Client's first name is absent");    if (clientRequestDto.email() == null)        throw new ClientException("Client's email is absent");    if (clientRequestDto.birthDate() == null)        throw new ClientException("Client's birth date is absent");    if (clientRequestDto.password() == null)        throw new ClientException("Client's password is absent");    if (clientRequestDto.address().town() == null)        throw new ClientException("Client's address is absent");    if (clientRequestDto.address().street() == null)        throw new ClientException("Client's address is absent");    if (clientRequestDto.address().postalCode() == null)        throw new ClientException("Client's address is absent");    if (LocalDate.now().minus(Period.between(clientRequestDto.birthDate(), LocalDate.now())).getYear() < 18)        throw new ClientException("Client MUST be over 18 years old");}
+
+
+    public void verifierClient(ClientRequestDto clientRequestDto) throws ClientException {
+        if (clientRequestDto == null)
+            throw new ClientException("ClientRequestDto est nul");
+        if (clientRequestDto.nom() == null || clientRequestDto.nom().isBlank())
+            throw new ClientException("Le nom du client est absent");
+        if (clientRequestDto.prenom() == null)
+            throw new ClientException("Le prénom du client est absent");
+        if (clientRequestDto.email() == null)
+            throw new ClientException("L'adresse email du client est absente");
+        if (!clientRequestDto.email().matches(REGEX_MAIL))
+            throw new ClientException("L'adresse email du client n'est pas au bon format");
+        if (clientRequestDto.dateNaissance() == null)
+            throw new ClientException("La date de naissance est absente");
+        if (clientRequestDto.password() == null)
+            throw new ClientException("Le mot de passe est absent");
+        if (!clientRequestDto.password().matches(REGEX_PW))
+            throw new ClientException("Le mot de passe n'est pas au bon format");
+        if (clientRequestDto.adresse().ville() == null)
+            throw new ClientException("Le nom de la ville est absent");
+        if (clientRequestDto.adresse().rue() == null)
+            throw new ClientException("Le nom de la rue est absent");
+        if (clientRequestDto.adresse().codePostal() == null)
+            throw new ClientException("Le code postal est absent");
+        if (clientRequestDto.permis()== null || clientRequestDto.permis().isEmpty())
+            throw new ClientException("Le permis est obligatoire");
+        if (LocalDate.now().minus(Period.between(clientRequestDto.dateNaissance(), LocalDate.now())).getYear() < 18)
+            throw new ClientException("Le client doit avoir plus de 18 ans");}
 
 
 
@@ -94,12 +139,12 @@ public class ClientServiceImpl implements ClientService {
 //        Period age = Period.between(birthday, today);
 //        return age.getYears() >= 18;
 //    }
-
+//
 //    private boolean isValidEmail(String email) {
 //        String emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
 //        return Pattern.compile(emailRegex).matcher(email).matches();
 //    }
-
+//
 //    private boolean isValidPassword(String password) {
 //        if (password.length() < 8 || password.length() > 16) {
 //            return false;
@@ -118,7 +163,7 @@ public class ClientServiceImpl implements ClientService {
 //        }
 //        return true;
 //    }
-
+//
 
 
 }
