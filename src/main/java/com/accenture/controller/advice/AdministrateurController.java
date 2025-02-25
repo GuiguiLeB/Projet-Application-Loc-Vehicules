@@ -4,6 +4,9 @@ package com.accenture.controller.advice;
 import com.accenture.service.dto.AdminRequestDto;
 import com.accenture.service.dto.AdminResponseDto;
 import com.accenture.service.AdministrateurService;
+import com.accenture.service.dto.ClientRequestDto;
+import com.accenture.service.dto.ClientResponseDto;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,8 +24,8 @@ public class AdministrateurController {
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<AdminResponseDto> unAdmin(@PathVariable("id") int id){
-        AdminResponseDto trouveAdm = administrateurService.trouverAdmin(id);
+    ResponseEntity<AdminResponseDto> unAdmin(@PathVariable("id") String email){
+        AdminResponseDto trouveAdm = administrateurService.trouverAdmin(email);
         return ResponseEntity.ok(trouveAdm);
     }
     @GetMapping
@@ -38,8 +41,16 @@ public class AdministrateurController {
     }
 
     @DeleteMapping("/{id}")
-    ResponseEntity<Void> suppr(@PathVariable("id") int id) {
-        administrateurService.supprimerAdmin(id);
+    ResponseEntity<Void> supprAdmin(@PathVariable("id") String email) {
+        administrateurService.supprimerAdmin(email);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
+    @PutMapping("/{id}")
+    ResponseEntity<AdminResponseDto>modifierAdmin(@PathVariable("id")String email, @RequestBody @Valid AdminRequestDto adminRequestDto) {
+        AdminResponseDto reponse = administrateurService.modifierAdmin(email, adminRequestDto);
+        return ResponseEntity.ok(reponse);
+    }
+
+
 }

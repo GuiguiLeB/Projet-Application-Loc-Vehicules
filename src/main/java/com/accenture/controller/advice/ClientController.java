@@ -40,14 +40,33 @@ public class ClientController {
     }
 
     @DeleteMapping("/{id}")
-    ResponseEntity<Void> supprimerClient(@PathVariable("id") String email) {
-        clientService.supprimerClient(email);
+    ResponseEntity<Void> supprimerClient(@PathVariable("id") String email, String password) {
+        clientService.supprimerClient(email,password);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
     @PutMapping("/{id}")
     ResponseEntity<ClientResponseDto>modifierClient(@PathVariable("id")String email, @RequestBody @Valid ClientRequestDto clientRequestDto) {
-        ClientResponseDto reponse = clientService.modifierClient(email, clientRequestDto);
+        ClientResponseDto reponse = clientService.modifierClient(email, clientRequestDto.password(), clientRequestDto);
         return ResponseEntity.ok(reponse);
     }
+
+    @GetMapping("/recupInfos")
+    public ResponseEntity<ClientResponseDto> recupInfos(@RequestParam String email, @RequestParam String password) {
+        // Appeler le service pour récupérer les informations du client
+        ClientResponseDto clientInfo = clientService.recupInfos(email, password);
+
+        // Vérifier si le client existe
+        if (clientInfo != null) {
+            // Retourner les informations du client avec un statut 200 (OK)
+            return ResponseEntity.ok(clientInfo);
+        } else {
+            // Si le client n'est pas trouvé, retourner un statut 404 (Non trouvé)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+
+
+
+
 
 }

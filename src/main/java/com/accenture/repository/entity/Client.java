@@ -2,6 +2,7 @@ package com.accenture.repository.entity;
 
 import com.accenture.model.Permis;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,7 @@ import java.util.List;
 @Entity
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 
 public class Client extends UtilisateurConnecte {
 
@@ -28,4 +30,7 @@ public class Client extends UtilisateurConnecte {
     @ElementCollection
     private List<Permis> permis;
     private Boolean desactive;
+
+
+
 }

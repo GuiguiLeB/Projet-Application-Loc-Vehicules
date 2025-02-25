@@ -15,14 +15,13 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 
 @Service
 public class ClientServiceImpl implements ClientService {
 
-    private static final String REGEX_MAIL = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
-    private static final String REGEX_PW = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[&#@-_§])[A-Za-z\\d&%$_]{8,16}$";
+    private final String REGEX_MAIL = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
+    private final String REGEX_PW = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[&#@-_§])[A-Za-z\\d&%$_]{8,16}$";
     public static final String ID_NON_PRESENT = "id non présent";
     private final ClientDao clientDao;
     private final ClientMapper clientMapper;
@@ -63,17 +62,16 @@ public class ClientServiceImpl implements ClientService {
         Client clientEnreg = clientDao.save(client);
         return clientMapper.toClientResponseDto(clientEnreg);    }
 
-//    @Overridepublic ClientResponseDto toAdd(ClientRequestDto clientRequestDto) throws ClientException {
-//
-//        clientVerify(clientRequestDto);
-//        Client client = clientMapper.toClient(clientRequestDto);
-//        Client backedClient = clientDao.save(client);
-//        return clientMapper.toClientResponseDto(backedClient);}
 
     @Override
-    public ClientResponseDto modifierClient(String email, ClientRequestDto clientRequestDto) throws ClientException, EntityNotFoundException {
+    public ClientResponseDto modifierClient(String email, String password, ClientRequestDto clientRequestDto) throws ClientException, EntityNotFoundException {
         if (!clientDao.existsById(email))
             throw new EntityNotFoundException(ID_NON_PRESENT);
+
+        Client existingClient = clientDao.findById(email).orElseThrow(() -> new EntityNotFoundException(ID_NON_PRESENT));
+        if (!existingClient.getPassword().equals(password)) {
+            throw new ClientException("Mot de passe incorrect");
+        }
        verifierClient(clientRequestDto);
         Client client = clientMapper.toClient(clientRequestDto);
         client.setEmail(email);
@@ -81,11 +79,18 @@ public class ClientServiceImpl implements ClientService {
         return clientMapper.toClientResponseDto(registrdClient);}
 
 
-    public void supprimerClient(String email)
+    public void supprimerClient(String email,String password)
             throws EntityNotFoundException {
-        if (clientDao.existsById(email))
-            clientDao.deleteById(email);
+        Client client = clientDao.findByEmailAndPassword(email, password).orElseThrow(()->new EntityNotFoundException("utilisateur non trouvé"));
+        clientDao.delete(client);
     }
+
+    public ClientResponseDto recupInfos (String email, String password) {
+        Optional<Client> optClient = clientDao.findByEmail(email);
+        Client client = optClient.orElseThrow(() -> new EntityNotFoundException("Identifiants invalides"));
+        if (password != null && !password.equals(client.getPassword()))
+            throw new EntityNotFoundException("Identifiants invalides");
+        return clientMapper.toClientResponseDto(client);}
 
 
 
@@ -94,7 +99,7 @@ public class ClientServiceImpl implements ClientService {
             throw new ClientException("ClientRequestDto est nul");
         if (clientRequestDto.nom() == null || clientRequestDto.nom().isBlank())
             throw new ClientException("Le nom du client est absent");
-        if (clientRequestDto.prenom() == null)
+        if (clientRequestDto.prenom() == null || clientRequestDto.prenom().isBlank())
             throw new ClientException("Le prénom du client est absent");
         if (clientRequestDto.email() == null)
             throw new ClientException("L'adresse email du client est absente");
@@ -106,11 +111,11 @@ public class ClientServiceImpl implements ClientService {
             throw new ClientException("Le mot de passe est absent");
         if (!clientRequestDto.password().matches(REGEX_PW))
             throw new ClientException("Le mot de passe n'est pas au bon format");
-        if (clientRequestDto.adresse().ville() == null)
+        if (clientRequestDto.adresse().ville() == null || clientRequestDto.adresse().ville().isBlank())
             throw new ClientException("Le nom de la ville est absent");
-        if (clientRequestDto.adresse().rue() == null)
+        if (clientRequestDto.adresse().rue() == null || clientRequestDto.adresse().rue().isBlank())
             throw new ClientException("Le nom de la rue est absent");
-        if (clientRequestDto.adresse().codePostal() == null)
+        if (clientRequestDto.adresse().codePostal() == null || clientRequestDto.adresse().codePostal().isBlank())
             throw new ClientException("Le code postal est absent");
         if (clientRequestDto.permis()== null || clientRequestDto.permis().isEmpty())
             throw new ClientException("Le permis est obligatoire");
