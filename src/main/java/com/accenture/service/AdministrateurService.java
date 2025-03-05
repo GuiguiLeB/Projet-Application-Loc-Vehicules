@@ -10,10 +10,10 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 
 public interface AdministrateurService {
-    AdminResponseDto trouverAdmin(String email) throws AdministrateurException;
-    List<AdminResponseDto> listeAdmin();
+    AdminResponseDto trouverAdmin(String email, String password) throws AdministrateurException;
+    List<AdminResponseDto> listerAdmin();
     AdminResponseDto ajouterAdmin(AdminRequestDto adminRequestDto) throws AdministrateurException;
     void supprimerAdmin(String email) throws EntityNotFoundException;
-    AdminResponseDto modifierAdmin(String email, AdminRequestDto adminRequestDto) throws AdministrateurException;
-    void verifierAdmin(AdminRequestDto adminRequestDto) throws AdministrateurException;
+    AdminResponseDto modifierAdmin(String email,String password, AdminRequestDto adminRequestDto) throws AdministrateurException;
+
 }

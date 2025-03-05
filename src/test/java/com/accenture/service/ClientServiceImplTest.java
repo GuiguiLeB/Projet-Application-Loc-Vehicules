@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ClientServiceImplTest {
@@ -45,7 +47,7 @@ class ClientServiceImplTest {
 
 
     @DisplayName("""
-            Test de la méthode ajouterClient (String email) qui doit renvoyer une exception lorque
+            Test de la méthode ajouterClient (String email) qui doit renvoyer une exception lorsque
              la méthode renvoie un (null)
             """)
 
@@ -53,6 +55,7 @@ class ClientServiceImplTest {
     void testAjouter() {
         assertThrows(ClientException.class, () -> service.ajouterClient(null));
     }
+
 
     @DisplayName("""
             Si ajouter(TacheRequestDto avec nom null ) exception levée
@@ -63,6 +66,7 @@ class ClientServiceImplTest {
                 "Azertuiop23", LocalDate.now(), List.of(Permis.A));
         ClientException ce = assertThrows(ClientException.class, () -> service.ajouterClient(client));
         System.out.println(ce.getMessage());
+
     }
 
     @DisplayName("""
@@ -223,14 +227,35 @@ class ClientServiceImplTest {
         //simulation que la tache existe en base
         Client c = creerClient1();
         Optional<Client> optClient = Optional.of(c);
-        Mockito.when(daoMock.findById("gigi@hotmail.fr")).thenReturn(optClient);
+        when(daoMock.findById("gigi@hotmail.fr")).thenReturn(optClient);
         ClientResponseDto dto = creerClientResponseDtoClient1();
-        Mockito.when(mapperMock.toClientResponseDto(c)).thenReturn(dto);
+        when(mapperMock.toClientResponseDto(c)).thenReturn(dto);
 
-        assertSame(dto, service.trouver("gigi@hotmail.fr"));
+        assertSame(dto, service.trouverClient("gigi@hotmail.fr","AZErtyuiop34"));
 
 
     }
+
+    @Test
+    void testTrouverClientExistePas() {
+        // Simulation que le client n'existe pas en base
+        when(daoMock.findById("client@example.com")).thenReturn(Optional.empty());
+
+        // Vérifier que l'exception EntityNotFoundException est levée
+        assertThrows(EntityNotFoundException.class, () -> service.trouverClient("client@example.com","AZErtyuiop34"));
+    }
+
+//    @Test
+//    void testTrouverExistePas() {
+//        //simulation que la tache n'existe pas en base
+//
+//        Mockito.when(daoMock.findById("gigi@hotmail.fr")).thenReturn(Optional.empty());
+//
+//        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> service.trouverClient("gigi@hotmail.fr","AZErtyuiop34"));
+//        assertEquals("email non présent", ex.getMessage());
+//        System.out.println(ex.getMessage());
+//
+//    }
 
 
     private static Client creerClient1() {
@@ -262,7 +287,7 @@ class ClientServiceImplTest {
     private static ClientResponseDto creerClientResponseDtoClient1() {
         return new ClientResponseDto(
                 "Gaby", "lolo",
-                new Adresse(1, "pavé", "44000", "NANTES"), "gigi@hotmail.fr", LocalDate.of(2000, 12, 15),
+                new Adresse(1, "pavé", "44000", "NANTES"), "gigi@hotmail.fr","AZErtyuiop34", LocalDate.of(2000, 12, 15),
                 LocalDate.of(2022, 12, 24), List.of(Permis.C)
         );
     }
@@ -270,7 +295,7 @@ class ClientServiceImplTest {
     private static ClientResponseDto creerClientResponseDtoClient2() {
         return new ClientResponseDto(
                 "RIRI", "lulu",
-                new Adresse(2, "route", "33200", "Bordeaux"), "gigo@hotmail.fr", LocalDate.of(2001, 7, 10),
+                new Adresse(2, "route", "33200", "Bordeaux"), "gigo@hotmail.fr","AZErtyuiop35", LocalDate.of(2001, 7, 10),
                 LocalDate.of(2023, 12, 24), List.of(Permis.A)
         );
     }
@@ -293,11 +318,11 @@ class ClientServiceImplTest {
         ClientResponseDto clientResponseDtoClient2 = creerClientResponseDtoClient2();
         List<ClientResponseDto> dtos = List.of(creerClientResponseDtoClient1(),creerClientResponseDtoClient2());
 
-        Mockito.when(daoMock.findAll()).thenReturn(clients);
-        Mockito.when(mapperMock.toClientResponseDto(client1)).thenReturn(clientResponseDtoClient1);
-        Mockito.when(mapperMock.toClientResponseDto(client2)).thenReturn(clientResponseDtoClient2);
+        when(daoMock.findAll()).thenReturn(clients);
+        when(mapperMock.toClientResponseDto(client1)).thenReturn(clientResponseDtoClient1);
+        when(mapperMock.toClientResponseDto(client2)).thenReturn(clientResponseDtoClient2);
 
-        assertEquals(dtos, service.listeClients());
+        assertEquals(dtos, service.listerClients());
     }
 
     @Test
@@ -312,10 +337,9 @@ class ClientServiceImplTest {
         Client clientApresEnreg = creerClient1();
         ClientResponseDto responseDto = creerClientResponseDtoClient1();
 
-        Mockito.when(adresseMapper.toAdresse(requestDto.adresse())).thenReturn(new Adresse());
-        Mockito.when(mapperMock.toClient(requestDto)).thenReturn(clientAvantEnreg);
-        Mockito.when(daoMock.save(clientAvantEnreg)).thenReturn(clientApresEnreg);
-        Mockito.when(mapperMock.toClientResponseDto(clientApresEnreg)).thenReturn(responseDto);
+        when(mapperMock.toClient(requestDto)).thenReturn(clientAvantEnreg);
+        when(daoMock.save(clientAvantEnreg)).thenReturn(clientApresEnreg);
+        when(mapperMock.toClientResponseDto(clientApresEnreg)).thenReturn(responseDto);
 
         assertSame(responseDto, service.ajouterClient(requestDto));
     }
@@ -328,188 +352,103 @@ class ClientServiceImplTest {
         Client client = creerClient1();
         String email = client.getEmail();
         String password = client.getPassword();
-        Mockito.when(daoMock.findByEmailAndPassword(email, password)).thenReturn(Optional.of(client));
+        when(daoMock.findByEmailAndPassword(email, password)).thenReturn(Optional.of(client));
         service.supprimerClient(email, password);
         Mockito.verify(daoMock, Mockito.times(1)).delete(client);
     }
-
 
     @DisplayName(""" 
             Test de la methode supprimer qui doit supprimer un client
              """)
     @Test
     void testSupprimerExistePas(){
-        Mockito.when(daoMock.findByEmailAndPassword("tp@gmail.fr", "s")).thenReturn(Optional.empty());
+        when(daoMock.findByEmailAndPassword("tp@gmail.fr", "s")).thenReturn(Optional.empty());
         EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> service.supprimerClient("tp@gmail.fr", "s"));
         assertEquals("utilisateur non trouvé", ex.getMessage());
     }
 
 
-
-
-
-
-
 //    @Test
-//    void testModifier() {
-//        Mockito.when(daoMock.existsById("gigi@gmail.com")).thenReturn(false);
+//    public void testModifierClient_Success() throws EntityNotFoundException, ClientException {
+//        // Initialisation des données
+//        String email = "test@example.com";
+//        String password = "password123";
 //        ClientRequestDto requestDto = new ClientRequestDto("Gaby", "lolo",
 //                new AdresseDto("rue", "44000" , "NANTES"), "gigi@hotmail.fr","AZErtyuiop34", LocalDate.of(2000, 12, 15),
 //                List.of(Permis.C)) ;
-//        ClientException ce = assertThrows(ClientException.class, () -> service.modifierClient("gigi@gmail.com","AZErtyuiop34",  ClientRequestDto);
-//        System.out.println(ce.getMessage());
-//    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//        requestDto.setNom("Test User");
 //
-//    @Test
-//    void testAjouterClient(){
-//        ClientRequestDto requestDto = new ClientRequestDto("Gaby","lolo",new AdresseDto("pavé","44000","NANTES"),"gigi@hotmail.fr",
-//                "AZErtyuiop34",null, List.of(Permis.A));
-//        Client clientAvantEnreg = creerTachePromenade();
-//        tacheAvantEnreg.setId(0);
+//        Client existingClient = new Client();
+//        existingClient.setEmail(email);
+//        existingClient.setPassword(password);
 //
-//        Tache tacheApresEnreg = creerTachePromenade();
-//        TacheResponseDto responseDto = creerTacheResponseDtoPromenade();
+//        Client updatedClient = new Client();
+//        updatedClient.setName("Test User");
+//        updatedClient.setEmail(email);
 //
-//        Mockito.when(mapperMock.toTache(requestDto)).thenReturn(tacheAvantEnreg);
-//        Mockito.when(daoMock.save(tacheAvantEnreg)).thenReturn(tacheApresEnreg);
-//        Mockito.when(mapperMock.toTacheResponseDto(tacheApresEnreg)).thenReturn(responseDto);
+//        ClientResponseDto responseDto = new ClientResponseDto();
+//        responseDto.setName("Test User");
 //
-//        assertSame(responseDto, service.ajouter(requestDto));
-//    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @Test
-    void testTrouverExistePas() {
-        //simulation que la tache n'existe pas en base
-
-        Mockito.when(daoMock.findById("")).thenReturn(Optional.empty());
-
-        //vérifier que la méthode trouver (50) renvoie bien une exception
-        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> service.trouver(""));
-        assertEquals("id non présent", ex.getMessage());
-
-    }
+//        // Configuration des mocks
+//        when(clientDao.findByEmailAndPassword(email, password))
+//                .thenReturn(Optional.of(existingClient));
+//        when(clientMapper.toClient(requestDto)).thenReturn(updatedClient);
+//        when(clientDao.save(updatedClient)).thenReturn(updatedClient);
+//        when(clientMapper.toClientResponseDto(updatedClient)).thenReturn(responseDto);
 //
-//    @DisplayName("""
-//            Test de la méthode trouver(int id) qui doit renvoyer une exception lorque
-//             le client existe en base
-//            """)
+//        // Appel de la méthode à tester
+//        ClientResponseDto result = clientService.modifierClient(email, password, requestDto);
 //
-//    @Test
-//    void testTrouverClientExistant() throws ClientException {
-//        when(daoMock.findById(1)).thenReturn(Optional.of(client));
-//        when(clientMapper.toClientResponseDto(client)).thenReturn(clientResponseDto);
-//
-//        ClientResponseDto result = clientService.trouver(1);
-//
+//        // Assertions
 //        assertNotNull(result);
-//        assertEquals(clientResponseDto, result);
+//        assertEquals("Test User", result.getName());
+//        verify(clientDao, times(1)).findByEmailAndPassword(email, password);
+//        verify(clientDao, times(1)).save(updatedClient);
+//        verify(clientMapper, times(1)).toClientResponseDto(updatedClient);
 //    }
-//
+
+
 //    @Test
-//    void testTrouverClientNonExistant() {
-//        when(clientDao.findById(1)).thenReturn(Optional.empty());
+//    void testModifierClientExiste() throws ClientException, EntityNotFoundException {
+//        // Simulation du client existant
+//        Client c = creerClient1();
+//        Optional<Client> optClient = Optional.of(c);
+//        when(daoMock.findByEmailAndPassword("client@example.com", "password123")).thenReturn(optClient);
 //
-//        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
-//            clientService.trouver(1);
-//        });
+//        // Simulation du mapping et de la sauvegarde
+//        ClientRequestDto clientRequestDto = creerClientRequestDto();
+//        Client client = new Client();
+//        when(mapperMock.toClient(clientRequestDto)).thenReturn(client);
 //
-//        assertEquals("ID_NON_PRESENT", exception.getMessage());
+//        Client savedClient = creerClientSauvegarde();
+//        when(daoMock.save(client)).thenReturn(savedClient);
+//
+//        ClientResponseDto clientResponseDto = creerClientResponseDto(savedClient);
+//        when(mapperMock.toClientResponseDto(savedClient)).thenReturn(clientResponseDto);
+//
+//        // Appel de la méthode et vérification
+//        ClientResponseDto result = service.modifierClient("client@example.com", "password123", clientRequestDto);
+//        assertSame(clientResponseDto, result);
 //    }
+
+//    void testModifierClientPartiellementOk() {
+//        // Given
+//        Client clientExistant = creerClient1();
+//        String email = clientExistant.getEmail();
+//        String motDePasse = clientExistant.getPassword();
+//        ClientRequestDto clientRequestDto = new ClientRequestDto
+//        Client clientMisAJour = creerClient2();
+//        clientMisAJour.setNom("NouveauNom");
+//        ClientResponseDto responseDto = new ClientResponseDto
+//        Mockito.when(daoMock.findByEmail(email)).thenReturn(Optional.of(clientExistant));
+//        Mockito.when(daoMock.save(Mockito.any(Client.class))).thenReturn(clientExistant);
+//        Mockito.when(mapperMock.toClientResponseDto(clientMisAJour)).thenReturn(responseDto);
+//        // When
+//        ClientResponseDto response = service.modifierClient(email, motDePasse, clientRequestDto);
+//        // Then
+//        assertNotNull(response);
+//        assertEquals("NouveauNom", response.nom());
+//        Mockito.verify(daoMock, Mockito.times(1)).save(clientExistant);}
+//    }
+
 }

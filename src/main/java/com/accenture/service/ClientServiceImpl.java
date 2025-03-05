@@ -33,7 +33,21 @@ public class ClientServiceImpl implements ClientService {
         this.adresseMapper = adresseMapper;
     }
 
-    public ClientResponseDto trouver(String email) throws ClientException {
+
+
+
+    /**
+     * Trouve un client par son email et retourne ses informations sous forme de DTO.
+     * La méthode vérifie si un client avec l'email fourni existe dans la base de données.
+     * En cas d'absence, une exception est levée.
+     *
+     * @param email l'email unique identifiant le client
+     * @param password le mot de passe associé au client (paramètre non utilisé dans cette implémentation actuelle)
+     * @return un objet {@link ClientResponseDto} contenant les informations du client trouvé
+     * @throws ClientException si une erreur liée au client survient
+     * @throws EntityNotFoundException si aucun client correspondant à l'email fourni n'est trouvé
+     */
+    public ClientResponseDto trouverClient(String email, String password) throws ClientException {
         Optional<Client> optClient = clientDao.findById(email);
         if (optClient.isEmpty())
             throw new EntityNotFoundException(ID_NON_PRESENT);
@@ -42,8 +56,15 @@ public class ClientServiceImpl implements ClientService {
 
     }
 
+
+    /**
+     * Récupère la liste de tous les clients dans la base de données
+     * et transforme les entités client en objets DTO.
+     *
+     * @return une liste d'objets {@link ClientResponseDto} représentant tous les clients enregistrés
+     */
     @Override
-    public List<ClientResponseDto> listeClients() {
+    public List<ClientResponseDto> listerClients() {
         return clientDao
                 .findAll()
                 .stream()
@@ -51,50 +72,80 @@ public class ClientServiceImpl implements ClientService {
                 .toList();
     }
 
+
+    /**
+     * Ajoute un nouveau client à la base de données après validation des données fournies.
+     * Transforme le DTO de requête en entité, applique les validations nécessaires,
+     * enregistre l'entité et retourne une représentation DTO du client enregistré.
+     *
+     * @param clientRequestDto un objet {@link ClientRequestDto} contenant les informations du client à ajouter
+     * @return un objet {@link ClientResponseDto} représentant le client ajouté après enregistrement
+     * @throws ClientException si les validations échouent pour les données fournies
+     */
     @Override
     public ClientResponseDto ajouterClient(ClientRequestDto clientRequestDto) throws ClientException {
       verifierClient(clientRequestDto);
 
-        Adresse adresse = adresseMapper.toAdresse(clientRequestDto.adresse());
-
         Client client = clientMapper.toClient(clientRequestDto);
-        client.setAdresse(adresse);
         Client clientEnreg = clientDao.save(client);
-        return clientMapper.toClientResponseDto(clientEnreg);    }
+        return clientMapper.toClientResponseDto(clientEnreg);
+    }
 
 
+
+    /**
+     * Modifie les informations d'un client existant en utilisant son email, son mot de passe et les données fournies.
+     * Vérifie si le client existe dans la base de données en fonction de l'email et du mot de passe.
+     * Valide les nouvelles données, applique les modifications et enregistre les changements dans la base de données.
+     *
+     * @param email l'email unique identifiant le client à modifier
+     * @param password le mot de passe associé au client
+     * @param clientRequestDto un objet {@link ClientRequestDto} contenant les nouvelles informations du client
+     * @return un objet {@link ClientResponseDto} représentant le client modifié après enregistrement
+     * @throws ClientException si les validations échouent pour les données fournies
+     * @throws EntityNotFoundException si aucun client correspondant à l'email et au mot de passe fournis n'est trouvé
+     */
     @Override
     public ClientResponseDto modifierClient(String email, String password, ClientRequestDto clientRequestDto) throws ClientException, EntityNotFoundException {
-        if (!clientDao.existsById(email))
-            throw new EntityNotFoundException(ID_NON_PRESENT);
 
-        Client existingClient = clientDao.findById(email).orElseThrow(() -> new EntityNotFoundException(ID_NON_PRESENT));
-        if (!existingClient.getPassword().equals(password)) {
-            throw new ClientException("Mot de passe incorrect");
-        }
+        clientDao.findByEmailAndPassword(email,password).orElseThrow(() -> new EntityNotFoundException(ID_NON_PRESENT));
        verifierClient(clientRequestDto);
         Client client = clientMapper.toClient(clientRequestDto);
         client.setEmail(email);
         Client registrdClient = clientDao.save(client);
-        return clientMapper.toClientResponseDto(registrdClient);}
+        return clientMapper.toClientResponseDto(registrdClient);
+    }
 
 
+    /**
+     * Supprime un client de la base de données en utilisant son email et son mot de passe pour l'authentification.
+     * Vérifie si le client existe avant de procéder à sa suppression.
+     *
+     * @param email l'email unique identifiant le client à supprimer
+     * @param password le mot de passe associé au client
+     * @throws EntityNotFoundException si aucun client correspondant à l'email et au mot de passe fournis n'est trouvé
+     */
     public void supprimerClient(String email,String password)
             throws EntityNotFoundException {
         Client client = clientDao.findByEmailAndPassword(email, password).orElseThrow(()->new EntityNotFoundException("utilisateur non trouvé"));
         clientDao.delete(client);
     }
 
-    public ClientResponseDto recupInfos (String email, String password) {
-        Optional<Client> optClient = clientDao.findByEmail(email);
+    public ClientResponseDto recupererInfos (String email, String password) {
+        Optional<Client> optClient = clientDao.findByEmailAndPassword(email,password);
         Client client = optClient.orElseThrow(() -> new EntityNotFoundException("Identifiants invalides"));
         if (password != null && !password.equals(client.getPassword()))
             throw new EntityNotFoundException("Identifiants invalides");
-        return clientMapper.toClientResponseDto(client);}
+        return clientMapper.toClientResponseDto(client);
+    }
 
 
+    /************************************************************
+     METHODE PRIVEE
+     *************************************************************/
 
-    public void verifierClient(ClientRequestDto clientRequestDto) throws ClientException {
+
+    private void verifierClient(ClientRequestDto clientRequestDto) throws ClientException {
         if (clientRequestDto == null)
             throw new ClientException("ClientRequestDto est nul");
         if (clientRequestDto.nom() == null || clientRequestDto.nom().isBlank())
@@ -107,6 +158,8 @@ public class ClientServiceImpl implements ClientService {
             throw new ClientException("L'adresse email du client n'est pas au bon format");
         if (clientRequestDto.dateNaissance() == null)
             throw new ClientException("La date de naissance est absente");
+        if (!ageRequis(clientRequestDto.dateNaissance()))
+            throw new ClientException("Le client doit avoir plus de 18 ans");
         if (clientRequestDto.password() == null)
             throw new ClientException("Le mot de passe est absent");
         if (!clientRequestDto.password().matches(REGEX_PW))
@@ -117,58 +170,16 @@ public class ClientServiceImpl implements ClientService {
             throw new ClientException("Le nom de la rue est absent");
         if (clientRequestDto.adresse().codePostal() == null || clientRequestDto.adresse().codePostal().isBlank())
             throw new ClientException("Le code postal est absent");
-        if (clientRequestDto.permis()== null || clientRequestDto.permis().isEmpty())
+        if (clientRequestDto.permis() == null || clientRequestDto.permis().isEmpty())
             throw new ClientException("Le permis est obligatoire");
-        if (LocalDate.now().minus(Period.between(clientRequestDto.dateNaissance(), LocalDate.now())).getYear() < 18)
-            throw new ClientException("Le client doit avoir plus de 18 ans");}
+    }
 
 
 
-//
-//    private void validateClient(ClientRequestDto clientRequestDto) {
-//        if (!isMajor(clientRequestDto.dateNaissance())) {
-//            throw new ClientException("Le client doit être majeur pour s'inscrire.");
-//        }
-//        if (!isValidEmail(clientRequestDto.email())) {
-//            throw new ClientException("L'email n'est pas valide.");
-//        }
-//        if (!isValidPassword(clientRequestDto.password())) {
-//            throw new ClientException("Le mot de passe n'est pas valide.");
-//        }
-
-//    }
-
-//    private boolean isMajor(LocalDate dateNaissance) {
-//        LocalDate today = LocalDate.now();
-//        LocalDate birthday = LocalDate.of(dateNaissance.getYear(), dateNaissance.getMonth() , dateNaissance.getDayOfYear());
-//        Period age = Period.between(birthday, today);
-//        return age.getYears() >= 18;
-//    }
-//
-//    private boolean isValidEmail(String email) {
-//        String emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
-//        return Pattern.compile(emailRegex).matcher(email).matches();
-//    }
-//
-//    private boolean isValidPassword(String password) {
-//        if (password.length() < 8 || password.length() > 16) {
-//            return false;
-//        }
-//        if (!password.matches(".*[A-Z].*")) {
-//            return false;
-//        }
-//        if (!password.matches(".*[a-z].*")) {
-//            return false;
-//        }
-//        if (!password.matches(".*[0-9].*")) {
-//            return false;
-//        }
-//        if (!password.matches(".*[&#@\\-_$§].*")) {
-//            return false;
-//        }
-//        return true;
-//    }
-//
-
-
+    private static boolean ageRequis(LocalDate dateNaissance) {
+        if (dateNaissance == null) { return false; }
+        return Period.between(dateNaissance, LocalDate.now()).getYears() >= 18;
+    }
 }
+
+

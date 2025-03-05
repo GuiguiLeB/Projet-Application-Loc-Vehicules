@@ -15,13 +15,6 @@ public abstract class UtilisateurConnecte {
     private String email;
     private String nom;
     private String prenom;
-
     private String password;
 
-    public UtilisateurConnecte(String nom, String prenom, String email, String password) {
-        this.nom = nom;
-        this.prenom = prenom;
-        this.email = email;
-        this.password = password;
-    }
 }

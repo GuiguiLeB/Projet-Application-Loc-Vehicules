@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface AdministrateurDao extends JpaRepository<Administrateur, String> {
 
-    Optional<Administrateur> findByEmailContaining(String email);
+    Optional<Administrateur> findByEmailAndPassword(String email,String password);
 }

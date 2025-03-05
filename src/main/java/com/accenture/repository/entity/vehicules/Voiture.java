@@ -48,23 +48,19 @@ public class Voiture extends Vehicule {
         this.transmission = transmission;
     }
 
-//********renseignements privés*********
 
 
 
 
-
-
-
-    public String getPermisRequis() {
-        if (nbPlaces <= 9) {
-            return "Permis B";
-        } else if (nbPlaces <= 16) {
-            return "Permis D1";
-        } else {
-            return "Permis non défini pour ce nombre de places";
-        }
-    }
+//    public String getPermisRequis() {
+//        if (nbPlaces <= 9) {
+//            return "Permis B";
+//        } else if (nbPlaces <= 16) {
+//            return "Permis D1";
+//        } else {
+//            return "Permis non défini pour ce nombre de places";
+//        }
+//    }
 
 
 
