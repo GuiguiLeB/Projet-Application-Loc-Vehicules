@@ -136,15 +136,14 @@ public class MotoServiceImpl implements MotoService {
      * @param id l'identifiant unique de la moto à retirer
      * @throws EntityNotFoundException si aucune moto correspondant à l'identifiant fourni n'est trouvée
      */
-    public void retirerDuParc(int id) throws EntityNotFoundException {
+    public MotoResponseDto retirerDuParc(int id) throws EntityNotFoundException {
+        // Vérifie si le véhicule existe dans la base de données
         Moto moto = motoDao.findById(id).orElseThrow(() ->
-                new EntityNotFoundException("L'ID de la moto n'est pas présent"));
-        if (moto.isActif()) {
-            moto.setRetireDuParc(true);
-            motoDao.save(moto);
-        } else {
-            motoDao.deleteById(id);
-        }
+                new EntityNotFoundException("L'ID du véhicule n'est pas présent"));
+
+        // Supprime le véhicule de la base de données
+        motoDao.deleteById(id);
+        return motoMapper.toMotoResponseDto(moto);
     }
 
 
@@ -163,7 +162,7 @@ public class MotoServiceImpl implements MotoService {
     @Override
     public List<MotoResponseDto> filtrer(Filtre filtre){
         List<Moto> listeMotos = motoDao.findAll();
-        List<MotoResponseDto> result = switch (filtre){
+        return switch (filtre){
             case ACTIF ->
                     listeMotos.stream()
                             .filter(Moto::isActif)
@@ -187,7 +186,6 @@ public class MotoServiceImpl implements MotoService {
             default ->
                     throw new IllegalArgumentException("Le filtre n'est pas disponible " + filtre);
         };
-        return result;
     }
 
 

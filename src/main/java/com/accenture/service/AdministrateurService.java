@@ -13,7 +13,7 @@ public interface AdministrateurService {
     AdminResponseDto trouverAdmin(String email, String password) throws AdministrateurException;
     List<AdminResponseDto> listerAdmin();
     AdminResponseDto ajouterAdmin(AdminRequestDto adminRequestDto) throws AdministrateurException;
-    void supprimerAdmin(String email) throws EntityNotFoundException;
+    void supprimerAdmin(String email, String password) throws EntityNotFoundException;
     AdminResponseDto modifierAdmin(String email,String password, AdminRequestDto adminRequestDto) throws AdministrateurException;
 
 }

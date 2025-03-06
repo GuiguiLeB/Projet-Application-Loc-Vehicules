@@ -48,9 +48,9 @@ public class ClientServiceImpl implements ClientService {
      * @throws EntityNotFoundException si aucun client correspondant à l'email fourni n'est trouvé
      */
     public ClientResponseDto trouverClient(String email, String password) throws ClientException {
-        Optional<Client> optClient = clientDao.findById(email);
+        Optional<Client> optClient = clientDao.findByEmailAndPassword(email,password);
         if (optClient.isEmpty())
-            throw new EntityNotFoundException(ID_NON_PRESENT);
+            throw new EntityNotFoundException("l'adresse mail ou le mot de passe est incorrect");
         Client client = optClient.get();
         return clientMapper.toClientResponseDto(client);
 
@@ -131,13 +131,6 @@ public class ClientServiceImpl implements ClientService {
         clientDao.delete(client);
     }
 
-    public ClientResponseDto recupererInfos (String email, String password) {
-        Optional<Client> optClient = clientDao.findByEmailAndPassword(email,password);
-        Client client = optClient.orElseThrow(() -> new EntityNotFoundException("Identifiants invalides"));
-        if (password != null && !password.equals(client.getPassword()))
-            throw new EntityNotFoundException("Identifiants invalides");
-        return clientMapper.toClientResponseDto(client);
-    }
 
 
     /************************************************************
@@ -181,5 +174,6 @@ public class ClientServiceImpl implements ClientService {
         return Period.between(dateNaissance, LocalDate.now()).getYears() >= 18;
     }
 }
+
 
 

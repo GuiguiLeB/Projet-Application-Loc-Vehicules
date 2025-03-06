@@ -113,16 +113,23 @@ private final VoitureMapper voitureMapper;
      * @throws EntityNotFoundException si aucune voiture correspondant à l'identifiant fourni n'existe
      */
 
+
     @Override
-    public VoitureResponseDto modifierVoiture(int id, VoitureRequestDto voitureRequestDto) throws VoitureException, EntityNotFoundException {
-        if (!voitureDao.existsById(id))
+    public VoitureResponseDto modifierPartiellement(int id, VoitureRequestDto voitureRequestDto) throws VoitureException , EntityNotFoundException {
+        Optional<Voiture> optVoiture = voitureDao.findById(id);
+        if (optVoiture.isEmpty())
             throw new EntityNotFoundException(ID_NON_PRESENT);
 
-        verifierVoiture(voitureRequestDto);
-        Voiture voiture = voitureMapper.toVoiture(voitureRequestDto);
-        voiture.setId(id);
-        Voiture registredVoiture = voitureDao.save(voiture);
-        return voitureMapper.toVoitureResponseDto(registredVoiture);
+        Voiture voitureExistante = optVoiture.get();
+
+        Voiture nouvelle = voitureMapper.toVoiture(voitureRequestDto);
+
+        remplacer(nouvelle, voitureExistante);
+
+        Voiture voitureEnreg = voitureDao.save(voitureExistante);
+        return voitureMapper.toVoitureResponseDto(voitureEnreg);
+
+
     }
 
 
@@ -210,7 +217,7 @@ private static void verifierVoiture(VoitureRequestDto voitureRequestDto) throws 
     if (voitureRequestDto.transmission() == null)
         throw new VoitureException("Le mode de transmission est absent");
     if (voitureRequestDto.nbBagages() == null || voitureRequestDto.nbBagages() <= 0)
-        throw new ClientException("Le code postal est absent");
+        throw new ClientException("Le nombre de bagages ne peut pas être inférieur à 0");
     if (voitureRequestDto.typeVoiture() == null)
         throw new VoitureException("Veuillez choisir le type de voiture svp");
     if (voitureRequestDto.nbPlaces() > 9 && voitureRequestDto.nbPlaces() <= 16) {
@@ -223,15 +230,21 @@ private static void verifierVoiture(VoitureRequestDto voitureRequestDto) throws 
 
 }
 
-//    private static void remplacer(Voiture voiture, Voiture voitureExistante) {
-//        if (voiture.get() != null)
-//            voitureExistante.setTermine(voiture.getTermine());
-//        if (voiture.getLibelle() != null)
-//            voitureExistante.setLibelle(voiture.getLibelle());
-//        if (voiture.getDateLimite() != null)
-//            voitureExistante.setDateLimite(voiture.getDateLimite());
-//        if (voiture.getNiveau() != null)
-//            voitureExistante.setNiveau(voiture.getNiveau());
-//    }
+    private static void remplacer(Voiture voiture, Voiture voitureExistante) {
+        if (voiture.getMarque() != null)
+            voitureExistante.setMarque(voiture.getMarque());
+        if (voiture.getModele() != null)
+            voitureExistante.setModele(voiture.getModele());
+        if (voiture.getCouleur() != null)
+            voitureExistante.setCouleur(voiture.getCouleur());
+        if (voiture.getTypeCarburant() != null)
+            voitureExistante.setTypeCarburant(voiture.getTypeCarburant());
+        if (voiture.getTransmission() != null)
+            voitureExistante.setTransmission(voiture.getTransmission());
+        if (voiture.getTypeVoiture() != null)
+            voitureExistante.setTypeVoiture(voiture.getTypeVoiture());
+
+
+    }
 }
 

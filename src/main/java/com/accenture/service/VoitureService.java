@@ -12,9 +12,9 @@ public interface VoitureService {
 
     VoitureResponseDto ajouterVoiture(VoitureRequestDto voitureRequestDto) throws VoitureException;
     List<VoitureResponseDto> listerVoiture();
-    VoitureResponseDto modifierVoiture(int id, VoitureRequestDto voitureRequestDto) throws VoitureException, EntityNotFoundException;
+    VoitureResponseDto modifierPartiellement(int id, VoitureRequestDto voitureRequestDto) throws VoitureException , EntityNotFoundException;
     VoitureResponseDto retirerDuParc(int id) throws EntityNotFoundException;
     List<VoitureResponseDto> filtrer(Filtre filtre);
-    VoitureResponseDto trouverVoiture(int id);
-    VoitureResponseDto recupererInfosVoiture(int id, boolean actif);
+    VoitureResponseDto trouverVoiture(int id)throws VoitureException;
+
 }

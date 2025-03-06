@@ -46,7 +46,7 @@ public class AdministrateurServiceImpl implements AdministrateurService {
      */
     @Override
     public AdminResponseDto trouverAdmin(String email, String password) throws AdministrateurException {
-        Optional<Administrateur> optAdmin = administrateurDao.findById(email);
+        Optional<Administrateur> optAdmin = administrateurDao.findByEmailAndPassword(email,password);
         if (optAdmin.isEmpty())
             throw new EntityNotFoundException(ID_NON_PRESENT);
         Administrateur administrateur = optAdmin.get();
@@ -125,13 +125,10 @@ public class AdministrateurServiceImpl implements AdministrateurService {
      * @param email l'email unique identifiant l'administrateur à supprimer
      * @throws EntityNotFoundException si aucun administrateur correspondant à l'email fourni n'est trouvé
      */
-    public void supprimerAdmin(String email) throws EntityNotFoundException {
-        if (administrateurDao.existsById(email))
-            administrateurDao.deleteById(email);
-        else
-            throw new EntityNotFoundException(ID_NON_PRESENT);
+    public void supprimerAdmin(String email,String password) throws EntityNotFoundException {
+        Administrateur administrateur = administrateurDao.findByEmailAndPassword(email, password).orElseThrow(()->new EntityNotFoundException("utilisateur non trouvé"));
+        administrateurDao.delete(administrateur);
     }
-
 
 
     /************************************************************

@@ -11,7 +11,6 @@ import java.util.List;
 public interface ClientService {
     ClientResponseDto ajouterClient(ClientRequestDto clientRequestDto) throws ClientException;
     ClientResponseDto trouverClient(String email, String password);
-    ClientResponseDto recupererInfos(String email, String password);
     List<ClientResponseDto> listerClients();
     ClientResponseDto modifierClient(String email, String password, ClientRequestDto clientRequestDto) throws ClientException, EntityNotFoundException;
     void supprimerClient(String email,String password) throws EntityNotFoundException;

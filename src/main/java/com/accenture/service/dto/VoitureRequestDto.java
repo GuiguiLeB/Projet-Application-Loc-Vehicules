@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
-@Schema(description = "Detail des vehicules")
+
 public record VoitureRequestDto(
 
         @Schema(description = "Marque du véhicule", example = "Toyota")

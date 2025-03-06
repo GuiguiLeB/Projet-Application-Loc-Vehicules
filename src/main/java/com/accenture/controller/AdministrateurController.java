@@ -1,6 +1,7 @@
 package com.accenture.controller;
 
 
+import com.accenture.exception.AdministrateurException;
 import com.accenture.service.dto.AdminRequestDto;
 import com.accenture.service.dto.AdminResponseDto;
 import com.accenture.service.AdministrateurService;
@@ -8,8 +9,11 @@ import com.accenture.service.dto.ClientRequestDto;
 import com.accenture.service.dto.ClientResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +26,7 @@ import java.util.List;
 public class AdministrateurController {
 
     private final AdministrateurService administrateurService;
+    private static final Logger logger = LoggerFactory.getLogger(AdministrateurController.class);
 
     public AdministrateurController(AdministrateurService administrateurService) {
         this.administrateurService = administrateurService;
@@ -32,15 +37,30 @@ public class AdministrateurController {
     @ApiResponse(responseCode = "201", description = "Administrateur trouvé avec succès")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     ResponseEntity<AdminResponseDto> trouverUnAdmin(@PathVariable("email") String email, String password){
-        AdminResponseDto trouveAdm = administrateurService.trouverAdmin(email,password);
-        return ResponseEntity.ok(trouveAdm);
+
+        try {
+            AdminResponseDto trouveAdm = administrateurService.trouverAdmin(email,password);
+            logger.info("L'administrateur a bien été trouvé");
+            return ResponseEntity.ok(trouveAdm);
+        } catch (AdministrateurException e) {
+            logger.error("Erreur lors de la récupération de l'administrateur");
+            throw new AdministrateurException(e.getMessage());
+        }
     }
     @GetMapping
     @Operation(summary = "Afficher tous les administrateurs", description = "Affiche tous les admnistrateurs de l'application.")
     @ApiResponse(responseCode = "201", description = "Affiche tous les administrateurs avec succès")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     List<AdminResponseDto> trouverTousLesAdmin(){
-        return administrateurService.listerAdmin();
+
+        try {
+            List<AdminResponseDto> listeAdmins = administrateurService.listerAdmin();
+            logger.info("La liste des administrateurs a bien été recupérée");
+            return listeAdmins;
+        } catch (AdministrateurException e) {
+            logger.error("Erreur lors de la récupération de la liste des administrateurs");
+            throw new AdministrateurException(e.getMessage());
+        }
     }
 
 
@@ -49,17 +69,29 @@ public class AdministrateurController {
     @ApiResponse(responseCode = "201", description = "Administrateur ajouté avec succès")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     ResponseEntity<Void> ajouterAdmin(@RequestBody AdminRequestDto adminRequestDto) {
-        administrateurService.ajouterAdmin(adminRequestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        try {
+            administrateurService.ajouterAdmin(adminRequestDto);
+            logger.info("L'administrateur' a bien été ajouté");
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (AdministrateurException e) {
+            logger.error("Erreur lors de l'ajout de l'administrateur");
+            throw new AdministrateurException(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{email}")
     @Operation(summary = "Supprimer un administrateur", description = "Supprime un administrateur dans l'application.")
     @ApiResponse(responseCode = "201", description = "Administrateur supprimé avec succès")
     @ApiResponse(responseCode = "400", description = "Données invalides")
-    ResponseEntity<Void> supprimerAdmin(@PathVariable("email") String email) {
-        administrateurService.supprimerAdmin(email);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    ResponseEntity<Void> supprimerAdmin(@PathVariable("email") String email, String password) {
+        try {
+            administrateurService.supprimerAdmin(email,password);
+            logger.info("L'administrateur a bien été supprimé");
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        } catch (EntityNotFoundException e) {
+            logger.error("Erreur lors de la suppression de l'administrateur");
+            throw new RuntimeException(e);
+        }
     }
 
     @PutMapping("/{email}")
